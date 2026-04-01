@@ -1,0 +1,385 @@
+/* Modern CSS Reset & Vars */
+:root {
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --secondary: #ec4899;
+    --secondary-hover: #db2777;
+    --accent: #14b8a6;
+    --accent-hover: #0d9488;
+    
+    --bg-dark: #0f172a;
+    --card-bg: rgba(30, 41, 59, 0.7);
+    --border-color: rgba(255, 255, 255, 0.1);
+    
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Outfit', sans-serif;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+/* Background animated glass blob */
+.glass-bg {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: -1;
+    background: radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(236, 72, 153, 0.15), transparent 25%);
+    filter: blur(60px);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Typography & Header */
+.header {
+    text-align: center;
+    padding: 3rem 1rem 2rem;
+}
+
+.header h1 {
+    font-size: 2.5rem;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.header h1 span {
+    color: transparent;
+    background-clip: text;
+    -webkit-background-clip: text;
+    background-image: linear-gradient(to right, var(--primary), var(--secondary));
+}
+
+.header p {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+}
+
+/* Layout Container */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    flex: 1;
+}
+
+@media (max-width: 900px) {
+    .container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Cards / Panels (Glassmorphism) */
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 2rem;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+}
+
+.card-header i.icon {
+    font-size: 1.2rem;
+    color: var(--accent);
+}
+
+.card-header h2 {
+    font-size: 1.3rem;
+    font-weight: 500;
+}
+
+/* Sign output + camera (Left) */
+.sign-panel,
+.camera-container {
+    position: relative;
+    width: 100%;
+    min-height: 220px;
+    aspect-ratio: 16/9;
+    background: #0b1220;
+    border-radius: 12px;
+    overflow: auto;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.sign-output {
+    width: 100%;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.sign-media-stage {
+    position: relative;
+    width: 100%;
+    min-height: 150px;
+    max-height: 280px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(2, 6, 23, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.sign-media-stage video,
+.sign-media-stage img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #020617;
+}
+
+.sign-media-empty {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 1rem;
+}
+
+.sign-media-label {
+    position: absolute;
+    left: 0.6rem;
+    bottom: 0.6rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(2, 6, 23, 0.75);
+    color: #e2e8f0;
+    font-size: 0.72rem;
+    border: 1px solid rgba(255,255,255,0.12);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.sign-gloss-line {
+    font-size: 1.35rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.sign-sequence {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: flex-start;
+}
+
+.sign-token {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+    padding: 0.45rem 0.65rem;
+    border-radius: 8px;
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    font-size: 0.85rem;
+    max-width: 100%;
+}
+
+.sign-token.lexical .sign-token-main {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.sign-token.fingerspell .sign-token-main {
+    font-family: ui-monospace, monospace;
+    letter-spacing: 0.12em;
+    color: var(--primary);
+    font-size: 0.8rem;
+}
+
+.sign-token .sign-token-sub {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.camera-container video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.placeholder-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    color: var(--text-muted);
+    background: rgba(15, 23, 42, 0.8);
+    transition: opacity 0.3s ease;
+}
+
+.placeholder-overlay i {
+    color: var(--primary);
+    opacity: 0.7;
+}
+
+.recording-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(0,0,0,0.6);
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    backdrop-filter: blur(4px);
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    background-color: #ef4444;
+    border-radius: 50%;
+    animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* Interaction Section (Right) */
+.controls-container {
+    margin-bottom: 1.5rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 0;
+    border-radius: 10px;
+    border: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: white;
+}
+
+.btn-primary { background: var(--primary); box-shadow: 0 4px 14px rgba(99,102,241,0.3); }
+.btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); }
+
+.btn-secondary { background: var(--secondary); box-shadow: 0 4px 14px rgba(236,72,153,0.3); }
+.btn-secondary:hover { background: var(--secondary-hover); transform: translateY(-2px); }
+
+.btn-accent { background: var(--accent); box-shadow: 0 4px 14px rgba(20,184,166,0.3); }
+.btn-accent:hover { background: var(--accent-hover); transform: translateY(-2px); }
+
+/* Animation class for active recording state */
+.btn.recording {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); background: #ef4444; }
+    70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); background: #dc2626; }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); background: #ef4444; }
+}
+
+.status-indicator {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    background: rgba(0,0,0,0.2);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.input-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+textarea {
+    width: 100%;
+    flex: 1;
+    min-height: 150px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1rem;
+    color: white;
+    font-size: 1.05rem;
+    resize: none;
+    margin-bottom: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+}
+
+.submit-row {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    flex: none;
+    padding: 0.75rem 1.5rem;
+}
+.btn-submit:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}

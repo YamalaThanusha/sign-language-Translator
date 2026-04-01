@@ -1,0 +1,20 @@
+{
+  "hello": "HELLO",
+  "hi": "HELLO",
+  "goodbye": "BYE",
+  "bye": "BYE",
+  "thank": "THANK-YOU",
+  "thanks": "THANK-YOU",
+  "please": "PLEASE",
+  "yes": "YES",
+  "no": "NO",
+  "help": "HELP",
+  "love": "LOVE",
+  "good": "GOOD",
+  "bad": "BAD",
+  "water": "WATER",
+  "food": "FOOD",
+  "name": "NAME",
+  "friend": "FRIEND",
+  "family": "FAMILY"
+}

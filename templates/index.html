@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Language Translator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Load Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Font Awesome for sleek icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="glass-bg"></div>
+    
+    <header class="header">
+        <h1>Sign Language <span>Translator</span></h1>
+        <p>A 3-in-1 Communication Bridge</p>
+    </header>
+
+    <main class="container">
+        
+        <!-- Left Column: Sign output (text-to-sign gloss sequence) -->
+        <section class="card video-section">
+            <div class="card-header">
+                <i class="fa-solid fa-hands-asl-interpreting icon"></i>
+                <h2>Sign Output</h2>
+            </div>
+
+            <div class="sign-panel" id="signPanel">
+                <div class="placeholder-overlay" id="signPlaceholder">
+                    <i class="fa-solid fa-hands fa-3x"></i>
+                    <p>Enter text or speak to see sign glosses and sequence</p>
+                </div>
+                <div id="signOutput" class="sign-output hidden">
+                    <div class="sign-media-stage" id="signMediaStage" aria-live="polite">
+                        <video id="signPlayerVideo" class="hidden" autoplay muted playsinline></video>
+                        <img id="signPlayerImage" class="hidden" alt="Sign preview" />
+                        <div id="signMediaEmpty" class="sign-media-empty">No sign media found for this translation.</div>
+                        <p id="signMediaLabel" class="sign-media-label hidden"></p>
+                    </div>
+                    <p class="sign-gloss-line" id="signGlossLine" aria-live="polite"></p>
+                    <div class="sign-sequence" id="signSequence"></div>
+                </div>
+            </div>
+            
+            <div class="camera-container hidden" id="cameraContainer">
+                <video id="webcamView" autoplay playsinline muted></video>
+                <div class="recording-badge" id="cameraBadge"><span class="dot"></span> Analyzing Camera</div>
+                <canvas id="cameraCanvas" class="hidden"></canvas>
+            </div>
+        </section>
+
+        <!-- Right Column: Text & Interaction Box -->
+        <section class="card interaction-section">
+            <div class="card-header">
+                <i class="fa-solid fa-message icon"></i>
+                <h2>Interaction Box</h2>
+            </div>
+
+            <div class="controls-container">
+                <div class="action-buttons">
+                    <button id="micBtn" class="btn btn-primary" title="Voice Input">
+                        <i class="fa-solid fa-microphone"></i>
+                        <span>Speak</span>
+                    </button>
+                    
+                    <button id="camBtn" class="btn btn-secondary" title="Camera Sign Input">
+                        <i class="fa-solid fa-video"></i>
+                        <span>Sign</span>
+                    </button>
+                    
+                    <button id="speakerBtn" class="btn btn-accent" title="Read Text Aloud">
+                        <i class="fa-solid fa-volume-high"></i>
+                        <span>Play Audio</span>
+                    </button>
+                </div>
+                
+                <div id="statusIndicator" class="status-indicator">
+                    <i class="fa-solid fa-circle-info"></i> <span id="statusText">Ready for input</span>
+                </div>
+            </div>
+
+            <div class="input-container">
+                <textarea 
+                    id="textInput" 
+                    placeholder="Type here to translate to sign..." 
+                    rows="5"
+                ></textarea>
+                
+                <div class="submit-row">
+                    <button id="translateTextBtn" class="btn btn-submit">
+                        Translate Text <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            
+        </section>
+
+    </main>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

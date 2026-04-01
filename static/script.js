@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cameraCanvas = document.getElementById('cameraCanvas');
 
     let isRecordingAudio = false;
+    let isSpeakingAudio = false;
     let recognition = null;
 
     let isCameraActive = false;
@@ -108,31 +109,46 @@ document.addEventListener('DOMContentLoaded', () => {
         return tokens;
     }
 
-    async function buildMediaPlaylist(sequence) {
+    function mediaTypeFromUrl(url) {
+        const clean = (url || '').split('?')[0].toLowerCase();
+        return clean.endsWith('.mp4') || clean.endsWith('.webm') ? 'video' : 'image';
+    }
+
+    async function buildMediaPlaylist(sequence, alreadyUsedUrls = []) {
         const tokens = tokenListFromSequence(sequence);
         const playlist = [];
+        const seen = new Set((alreadyUsedUrls || []).filter(Boolean));
+
+        const mediaBases = ['/static/signs', '/static/signs/gifs', '/static/signs/videos'];
 
         for (const token of tokens) {
             const variants = uniqueTokenVariants(token);
             let found = null;
 
             for (const name of variants) {
-                for (const ext of MEDIA_EXTENSIONS) {
-                    const url = `/static/signs/${encodeURIComponent(name)}.${ext}`;
-                    // Resolve the first existing file for this token.
-                    if (await urlExists(url)) {
-                        found = {
-                            url,
-                            token,
-                            type: ext === 'mp4' || ext === 'webm' ? 'video' : 'image',
-                        };
-                        break;
+                for (const base of mediaBases) {
+                    for (const ext of MEDIA_EXTENSIONS) {
+                        const url = `${base}/${encodeURIComponent(name)}.${ext}`;
+                        if (seen.has(url)) {
+                            continue;
+                        }
+                        // Resolve the first existing file for this token.
+                        if (await urlExists(url)) {
+                            found = {
+                                url,
+                                token,
+                                type: ext === 'mp4' || ext === 'webm' ? 'video' : 'image',
+                            };
+                            break;
+                        }
                     }
+                    if (found) break;
                 }
                 if (found) break;
             }
 
             if (found) {
+                seen.add(found.url);
                 playlist.push(found);
             }
         }
@@ -220,6 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
         signSequence.classList.add('hidden');
 
         const playlist = [];
+        const explicitMediaUrls = [];
         (data.sign_sequence || []).forEach((step) => {
             const el = document.createElement('div');
             el.className = 'sign-token';
@@ -229,12 +246,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     `<span class="sign-token-main">${escapeHtml(step.gloss)}</span>` +
                     `<span class="sign-token-sub">${escapeHtml(step.english || '')}</span>`;
                 
-                // Add to playlist if video URL is available
-                if (step.video_url) {
+                // Add to playlist if backend media URL is available.
+                const backendUrl = step.video_url || step.gif_url || step.media_url;
+                if (backendUrl) {
+                    explicitMediaUrls.push(backendUrl);
                     playlist.push({
-                        url: step.video_url,
+                        url: backendUrl,
                         token: step.gloss || step.english,
-                        type: step.video_url.endsWith('.mp4') || step.video_url.endsWith('.webm') ? 'video' : 'image',
+                        type: mediaTypeFromUrl(backendUrl),
                     });
                 }
             } else if (step.kind === 'fingerspell') {
@@ -249,7 +268,12 @@ document.addEventListener('DOMContentLoaded', () => {
             signSequence.appendChild(el);
         });
 
-        // Play the media playlist if any items have video URLs
+        // Add fallback media discovery (GIF/image/video files in static folders)
+        // for signs that did not provide explicit backend URLs.
+        const discoveredPlaylist = await buildMediaPlaylist(data.sign_sequence || [], explicitMediaUrls);
+        playlist.push(...discoveredPlaylist);
+
+        // Play mixed media playlist (videos, GIFs, images).
         const currentRunId = mediaRunId;
         playMediaPlaylist(playlist, currentRunId);
 
@@ -298,10 +322,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 2. Voice → Text → Sign ---
     micBtn.addEventListener('click', () => {
+        if (isSpeakingAudio) {
+            updateStatus('Wait for audio playback to finish before recording.', true);
+            return;
+        }
         if (!isRecordingAudio) {
             startBrowserDictation();
         } else {
-            stopBrowserDictation();
+            stopBrowserDictation({ fromUser: true });
         }
     });
 
@@ -321,13 +349,17 @@ document.addEventListener('DOMContentLoaded', () => {
             isRecordingAudio = true;
             micBtn.classList.add('recording');
             micBtn.querySelector('span').textContent = 'Stop';
+            // New dictation session should replace previous spoken text.
+            textInput.value = '';
             updateStatus('Listening...');
         };
 
         recognition.onresult = (event) => {
+            if (isSpeakingAudio) {
+                return;
+            }
             const transcript = event.results[0][0].transcript;
-            const currentText = textInput.value;
-            textInput.value = (currentText ? currentText.trim() + ' ' : '') + transcript;
+            textInput.value = transcript.trim();
             updateStatus('Audio transcribed successfully');
             translateTextBtn.click();
         };
@@ -335,11 +367,11 @@ document.addEventListener('DOMContentLoaded', () => {
         recognition.onerror = (event) => {
             console.error(event.error);
             updateStatus('Microphone error.', true);
-            stopBrowserDictation();
+            stopBrowserDictation({ fromError: true });
         };
 
         recognition.onend = () => {
-            stopBrowserDictation();
+            stopBrowserDictation({ fromRecognitionEnd: true });
         };
 
         try {
@@ -349,14 +381,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function stopBrowserDictation() {
-        if (recognition) {
-            recognition.stop();
+    function stopBrowserDictation(opts = {}) {
+        const wasRecording = isRecordingAudio;
+        if (recognition && wasRecording && !opts.fromRecognitionEnd) {
+            try {
+                recognition.stop();
+            } catch (_err) {
+                // Some browsers throw if stop() is called while inactive.
+            }
         }
         isRecordingAudio = false;
         micBtn.classList.remove('recording');
         micBtn.querySelector('span').textContent = 'Speak';
-        updateStatus('Processing audio...');
+
+        if (opts.fromError) {
+            return;
+        }
+        if (opts.fromUser) {
+            updateStatus('Microphone stopped');
+            return;
+        }
+        if (opts.fromRecognitionEnd && wasRecording) {
+            updateStatus('Audio input complete');
+        }
     }
 
     // --- 3. Text → Voice (browser TTS) ---
@@ -364,18 +411,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const text = textInput.value.trim();
         if (!text) return;
 
+        if (isRecordingAudio) {
+            stopBrowserDictation({ fromUser: true });
+        }
+
+        if (window.speechSynthesis && window.speechSynthesis.speaking) {
+            window.speechSynthesis.cancel();
+        }
+
         updateStatus('Playing audio...');
         speakerBtn.style.opacity = '0.7';
+        isSpeakingAudio = true;
 
         const utterance = new SpeechSynthesisUtterance(text);
 
         utterance.onend = () => {
+            isSpeakingAudio = false;
             updateStatus('Finished playing');
             speakerBtn.style.opacity = '1';
         };
 
         utterance.onerror = (e) => {
             console.error('Speech synthesis error', e);
+            isSpeakingAudio = false;
             updateStatus('Error playing audio', true);
             speakerBtn.style.opacity = '1';
         };
@@ -462,17 +520,41 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await resp.json();
 
             if (data.success && data.text) {
-                const currentText = textInput.value;
-                const words = currentText.trim() ? currentText.trim().split(/\s+/) : [];
-                const lastWord = words.length > 0 ? words[words.length - 1] : '';
-
-                if (lastWord !== data.text) {
-                    textInput.value = (currentText ? currentText.trim() + ' ' : '') + data.text;
-                    updateStatus(`Detected sign: ${data.text}`);
-                }
+                textInput.value = data.text;
+                updateStatus(`Detected sign: ${data.text}`);
+                await playServerAudioFromText(data.text);
+            } else if (data.success) {
+                updateStatus('No sign detected yet. Hold your hand steady.', false);
             }
         } catch (err) {
             console.error('Frame processing error', err);
+        }
+    }
+
+    async function playServerAudioFromText(text) {
+        if (!text || !text.trim()) {
+            return;
+        }
+
+        try {
+            const resp = await fetch('/text-to-speech', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text.trim() })
+            });
+            const data = await resp.json();
+
+            if (!resp.ok || !data.success || !data.audio_url) {
+                return;
+            }
+
+            // Use backend-generated pyttsx3 audio output.
+            const audio = new Audio(data.audio_url);
+            await audio.play().catch(() => {
+                // Ignore autoplay/browser policy failures silently.
+            });
+        } catch (_err) {
+            // Keep sign recognition flow resilient if TTS endpoint fails.
         }
     }
 });
